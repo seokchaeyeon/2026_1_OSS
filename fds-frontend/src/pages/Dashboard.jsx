@@ -1,67 +1,59 @@
-import React from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { AlertTriangle, Activity, ShieldCheck } from 'lucide-react';
-
-// 화면에 뿌려줄 가상의 시간대별 거래 데이터 (나중엔 백엔드에서 받아올 예정)
-const mockData = [
-  { time: '09:00', normal: 400, fraud: 24 },
-  { time: '10:00', normal: 300, fraud: 13 },
-  { time: '11:00', normal: 550, fraud: 45 },
-  { time: '12:00', normal: 450, fraud: 22 },
-  { time: '13:00', normal: 700, fraud: 80 }, // 피크 타임
-  { time: '14:00', normal: 600, fraud: 35 },
-  { time: '15:00', normal: 800, fraud: 55 },
-];
+import React, { useState, useEffect } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 function Dashboard() {
+  // 백엔드에서 받아올 데이터를 저장할 주머니 준비
+  const [stats, setStats] = useState({
+    totalTransactions: 0,
+    normalTransactions: 0,
+    blockedTransactions: 0,
+    chartData: []
+  });
+
+  useEffect(() => {
+    // 백엔드의 대시보드 전용 API 호출!
+    fetch('http://localhost:8080/api/dashboard-stats')
+      .then(res => res.json())
+      .then(data => setStats(data))
+      .catch(err => console.error('대시보드 데이터 로딩 에러:', err));
+  }, []);
+
   return (
-    <div style={{ padding: '2rem', backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: 'sans-serif' }}>
+    <div style={{ padding: '20px', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
 
-      {/* 헤더 영역 */}
-      <header style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: '1.5rem', color: '#1e293b' }}>White-box FDS</h1>
-          <p style={{ margin: 0, color: '#64748b' }}>실시간 모니터링 대시보드</p>
+      {/* 1. 상단 요약 카드 3개 */}
+      <div style={{ display: 'flex', gap: '20px', marginBottom: '30px' }}>
+        <div style={{ flex: 1, backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', textAlign: 'center' }}>
+          <h3 style={{ color: '#64748b', margin: '0 0 10px 0' }}>총 거래 건수</h3>
+          <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#0f172a' }}>{stats.totalTransactions.toLocaleString()}</div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', color: '#10b981', fontWeight: 'bold' }}>
-          <Activity size={20} style={{ marginRight: '8px' }} /> 시스템 정상 가동 중
+        <div style={{ flex: 1, backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', textAlign: 'center' }}>
+          <h3 style={{ color: '#10b981', margin: '0 0 10px 0' }}>✅ 정상 처리 건수</h3>
+          <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#10b981' }}>{stats.normalTransactions.toLocaleString()}</div>
         </div>
-      </header>
-
-      {/* 요약 카드 영역 */}
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
-        <div style={{ flex: 1, backgroundColor: 'white', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <h3 style={{ margin: '0 0 0.5rem 0', color: '#64748b', fontSize: '0.9rem' }}>총 거래 건수</h3>
-          <p style={{ margin: 0, fontSize: '2rem', fontWeight: 'bold', color: '#0f172a' }}>6,230</p>
-        </div>
-        <div style={{ flex: 1, backgroundColor: 'white', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <h3 style={{ margin: '0 0 0.5rem 0', color: '#64748b', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
-            <ShieldCheck size={16} color="#10b981" /> 정상 처리 건수
-          </h3>
-          <p style={{ margin: 0, fontSize: '2rem', fontWeight: 'bold', color: '#10b981' }}>6,060</p>
-        </div>
-        <div style={{ flex: 1, backgroundColor: 'white', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #fee2e2' }}>
-          <h3 style={{ margin: '0 0 0.5rem 0', color: '#ef4444', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
-            <AlertTriangle size={16} /> 차단된 이상 거래
-          </h3>
-          <p style={{ margin: 0, fontSize: '2rem', fontWeight: 'bold', color: '#ef4444' }}>170</p>
+        <div style={{ flex: 1, backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', textAlign: 'center' }}>
+          <h3 style={{ color: '#ef4444', margin: '0 0 10px 0' }}>🚨 차단된 이상 거래</h3>
+          <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#ef4444' }}>{stats.blockedTransactions.toLocaleString()}</div>
         </div>
       </div>
 
-      {/* 차트 영역 */}
-      <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-        <h3 style={{ marginTop: 0, color: '#1e293b' }}>시간대별 거래 발생 추이</h3>
-        <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '2rem' }}>정상 거래 vs 이상 거래 실시간 비교</p>
+      {/* 2. 시간대별 거래 발생 추이 그래프 */}
+      <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+        <h2 style={{ textAlign: 'center', color: '#1e293b', marginBottom: '5px' }}>시간대별 거래 발생 추이</h2>
+        <p style={{ textAlign: 'center', color: '#64748b', marginBottom: '30px' }}>정상 거래 vs 이상 거래 실시간 비교</p>
 
-        <div style={{ width: '100%', height: 400 }}>
-          <ResponsiveContainer>
-            <LineChart data={mockData}>
+        <div style={{ height: '400px', width: '100%' }}>
+          {/* 받아온 chartData를 그래프에 연결! */}
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={stats.chartData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="time" />
+              <XAxis dataKey="name" />
               <YAxis />
               <Tooltip />
-              <Line type="monotone" dataKey="normal" name="정상 거래" stroke="#10b981" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-              <Line type="monotone" dataKey="fraud" name="이상 거래" stroke="#ef4444" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+              <Legend />
+              {/* 정상 데이터는 초록색 선, 이상 데이터는 빨간색 선으로 그립니다 */}
+              <Line type="monotone" dataKey="정상" stroke="#10b981" strokeWidth={3} dot={{ r: 6 }} activeDot={{ r: 8 }} />
+              <Line type="monotone" dataKey="이상" stroke="#ef4444" strokeWidth={3} dot={{ r: 6 }} activeDot={{ r: 8 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>

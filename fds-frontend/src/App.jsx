@@ -20,9 +20,9 @@ function App() {
       .catch(() => setServerMessage('❌ 서버 연결 실패'));
 
     // 2. 백엔드에서 로그 데이터 받아오기
-    fetch('http://localhost:8080/api/logs')
+    fetch('http://localhost:8080/api/file-logs')
       .then(res => res.text())
-      .then(data => setLogData(data))
+      .then(data => setLogData('✅ 실시간 데이터 로딩 완료'))
       .catch(() => setLogData('데이터 로딩 실패'));
   }, []);
 
