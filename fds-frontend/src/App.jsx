@@ -1,57 +1,65 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Dashboard from './pages/Dashboard';
 import LogDetail from './pages/LogDetail';
-import Login from './pages/Login'; // 👈 새로 만든 로그인 화면 불러오기
+import Login from './pages/Login';
+import RuleManagement from './pages/RuleManagement';
 
 function App() {
-  // 로그인 상태 관리 (처음엔 false, 즉 로그아웃 상태)
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  // 로그인 성공 시 보여줄 첫 화면 메뉴
   const [currentPage, setCurrentPage] = useState('dashboard');
 
-  // 1. 만약 로그인이 안 되어 있다면? -> 무조건 Login 화면만 보여줌
+  // 서버 상태와 데이터 건수를 저장할 공간
+  const [serverMessage, setServerMessage] = useState('서버 연결 확인 중...');
+  const [logData, setLogData] = useState('데이터 로딩 중...');
+
+  useEffect(() => {
+    // 1. 서버 상태 받아오기
+    fetch('http://localhost:8080/api/status')
+      .then(res => res.text())
+      .then(data => setServerMessage(data))
+      .catch(() => setServerMessage('❌ 서버 연결 실패'));
+
+    // 2. 백엔드에서 로그 데이터 받아오기
+    fetch('http://localhost:8080/api/logs')
+      .then(res => res.text())
+      .then(data => setLogData(data))
+      .catch(() => setLogData('데이터 로딩 실패'));
+  }, []);
+
   if (!isLoggedIn) {
-    return <Login onLoginSuccess={() => setIsLoggedIn(true)} />;
+    return (
+      <>
+        <Login onLoginSuccess={() => setIsLoggedIn(true)} />
+        {/* 로그인 전 배너 */}
+        <div style={{ position: 'fixed', bottom: '20px', right: '20px', backgroundColor: '#1e293b', color: '#10b981', padding: '15px', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', zIndex: 9999 }}>
+          <div>{serverMessage}</div>
+          <div style={{ color: '#fbbf24', marginTop: '5px' }}>📊 {logData}</div>
+        </div>
+      </>
+    );
   }
 
-  // 2. 로그인이 성공했다면? -> 아래의 메인 관제 시스템 화면을 보여줌
   return (
     <div>
-      {/* 상단 네비게이션(메뉴) 바 */}
       <nav style={{ backgroundColor: '#1e293b', padding: '1rem', display: 'flex', gap: '20px', alignItems: 'center' }}>
-        <div style={{ color: 'white', fontWeight: 'bold', fontSize: '1.2rem', marginRight: '30px' }}>
-          FDS Admin
-        </div>
-
-        <button
-          onClick={() => setCurrentPage('dashboard')}
-          style={{ backgroundColor: currentPage === 'dashboard' ? '#3b82f6' : 'transparent', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-        >
-          실시간 대시보드
-        </button>
-
-        <button
-          onClick={() => setCurrentPage('detail')}
-          style={{ backgroundColor: currentPage === 'detail' ? '#3b82f6' : 'transparent', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-        >
-          위반 증거 상세
-        </button>
-
-        {/* 로그아웃 버튼 (오른쪽 끝으로 밀어내기 위해 marginLeft: 'auto' 적용) */}
-        <button
-          onClick={() => setIsLoggedIn(false)}
-          style={{ marginLeft: 'auto', backgroundColor: '#475569', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-        >
-          로그아웃
-        </button>
+        <div style={{ color: 'white', fontWeight: 'bold', fontSize: '1.2rem', marginRight: '30px' }}>FDS Admin</div>
+        <button onClick={() => setCurrentPage('dashboard')} style={{ backgroundColor: currentPage === 'dashboard' ? '#3b82f6' : 'transparent', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer' }}>실시간 대시보드</button>
+        <button onClick={() => setCurrentPage('detail')} style={{ backgroundColor: currentPage === 'detail' ? '#3b82f6' : 'transparent', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer' }}>위반 증거 상세</button>
+        <button onClick={() => setCurrentPage('rules')} style={{ backgroundColor: currentPage === 'rules' ? '#3b82f6' : 'transparent', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer' }}>탐지 룰 관리</button>
+        <button onClick={() => setIsLoggedIn(false)} style={{ marginLeft: 'auto', backgroundColor: '#475569', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer' }}>로그아웃</button>
       </nav>
 
-      {/* 메뉴 선택에 따라 화면 전환 */}
       <main>
         {currentPage === 'dashboard' && <Dashboard />}
         {currentPage === 'detail' && <LogDetail />}
+        {currentPage === 'rules' && <RuleManagement />}
       </main>
+
+      {/* 로그인 후 배너 */}
+      <div style={{ position: 'fixed', bottom: '20px', right: '20px', backgroundColor: '#1e293b', color: '#10b981', padding: '15px', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', zIndex: 9999 }}>
+        <div>{serverMessage}</div>
+        <div style={{ color: '#fbbf24', marginTop: '5px' }}>📊 {logData}</div>
+      </div>
     </div>
   );
 }
