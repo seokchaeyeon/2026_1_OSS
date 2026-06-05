@@ -14,6 +14,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+
 @RestController
 @CrossOrigin(origins = "http://localhost:5173")
 public class FdsApiController {
@@ -181,5 +184,58 @@ public class FdsApiController {
         point.put("정상", normal);
         point.put("이상", blocked);
         return point;
+    }
+
+    // 🌟 룰 데이터를 저장해 둘 메모리 공간 (리스트)
+    private List<Map<String, Object>> detectionRules = new ArrayList<>();
+
+    // 🌟 서버가 켜질 때 기본 룰 2개를 미리 세팅하는 함수
+    private void initRulesIfNeeded() {
+        if (detectionRules.isEmpty()) {
+            Map<String, Object> rule1 = new HashMap<>();
+            rule1.put("id", "RULE-001");
+            rule1.put("name", "단일 고액 이체 제한");
+            rule1.put("condition", "1회 이체 금액 >= 1,000,000원");
+            rule1.put("status", "활성");
+            rule1.put("description", "심야 시간대 및 비정상 고액 이체 방지");
+            detectionRules.add(rule1);
+
+            Map<String, Object> rule2 = new HashMap<>();
+            rule2.put("id", "RULE-002");
+            rule2.put("name", "스머핑(분할 송금) 의심");
+            rule2.put("condition", "단기간 3회 이상 & 누적 2,000,000원 이상");
+            rule2.put("status", "활성");
+            rule2.put("description", "고액 이체 제한을 회피하려는 쪼개기 송금 차단");
+            detectionRules.add(rule2);
+        }
+    }
+
+    // ⚙️ 탐지 룰 목록 불러오기 (GET)
+    @GetMapping("/api/rules")
+    public List<Map<String, Object>> getDetectionRules() {
+        initRulesIfNeeded();
+        return detectionRules;
+    }
+
+    // ➕ 새 탐지 룰 추가하기 (POST) - 방금 버튼을 위해 새로 만든 기능!
+    @PostMapping("/api/rules")
+    public Map<String, String> addRule(@RequestBody Map<String, String> newRule) {
+        initRulesIfNeeded();
+        Map<String, Object> rule = new HashMap<>();
+
+        // 룰 번호 자동 생성 (RULE-003, RULE-004...)
+        String newId = String.format("RULE-%03d", detectionRules.size() + 1);
+
+        rule.put("id", newId);
+        rule.put("name", newRule.get("name"));
+        rule.put("condition", newRule.get("condition"));
+        rule.put("status", "활성");
+        rule.put("description", newRule.get("description"));
+
+        detectionRules.add(rule); // 리스트에 새 룰 추가!
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "success");
+        return response; // 성공했다고 프론트엔드에 알려줍니다
     }
 }
